@@ -42,7 +42,7 @@ request(Client) ->
             io:format("request {ok Str}"),
             io:format("\n\nRequest: ~s\n\n", [Str]),
             Request = http:parse_request(Str),
-            Response = reply(Request), %TODO PDF says reply(Request), where Request is unbound %
+            Response = reply(Request),
             gen_tcp:send(Client, Response);
         {error, Error} ->
             io:format("rudy: errr ~w~n", [Error])
