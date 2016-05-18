@@ -16,7 +16,7 @@ parse_request(R0) ->
     {Body, _} = message_body(R2),
     {Request, Headers, Body}.
 
-request_line([$G, $E, $T, 31 | R0]) ->
+request_line([$G, $E, $T, 32 | R0]) ->
     {URI, R1} = request_uri(R0),
     {Ver, R2} = http_version(R1),
     [13, 10 | R3] = R2,
