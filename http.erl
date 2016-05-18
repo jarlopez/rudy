@@ -1,5 +1,5 @@
 -module(http).
--export([parse_request/1]).
+-export([parse_request/1, ok/1, get/1]).
 
 % RFC 2616 -- Request definition
 %
@@ -48,4 +48,11 @@ header([C|R0]) ->
 
 message_body(R) ->
     {R, []}.
+
+%%%% ACTIONS  %%%%
+ok(Body) ->
+    "HTTP/1.1 200 OK\r\n" ++ "\r\n" ++ Body.
+
+get(URI) ->
+    "GET " ++ URI ++ " HTTP/1.1\r\n" ++ "\r\n".
 
