@@ -1,7 +1,6 @@
 -module(rudy).
 -export([init/1, handler/1, request/1, reply/1]).
 -compile({no_auto_import,[get/1]}).
--import(http, [parse_request/1, ok/1, get/1]).
 
 % Initializes server:
 %       - Takes port number
@@ -41,7 +40,9 @@ request(Client) ->
     case Recv of
         {ok, Str} ->
             io:format("request {ok Str}"),
-            Response = reply(Str), %TODO PDF says reply(Request), where Request is unbound %
+            io:format("\n\nRequest: ~s\n\n", [Str]),
+            Request = http:parse_request(Str),
+            Response = reply(Request), %TODO PDF says reply(Request), where Request is unbound %
             gen_tcp:send(Client, Response);
         {error, Error} ->
             io:format("rudy: errr ~w~n", [Error])
@@ -49,5 +50,5 @@ request(Client) ->
     gen_tcp:close(Client).
 
 % Decides what to reply and how to format into well-formed HTTP reply
-reply(Request) ->
-    io:format("reply: ~w~n", [Request]).
+reply({{get, URI, _}, _, _}) ->
+    http:ok("Welcome to the next chapter.").
