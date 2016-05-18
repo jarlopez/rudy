@@ -10,6 +10,7 @@ init(Port) ->
     case gen_tcp:listen(Port, Opt) of
         {ok, Listen} ->
             io:format("init {ok Listen}"),
+            handler(Listen),
             gen_tcp:close(Listen),
             ok;
         {error, Error} ->
@@ -23,7 +24,8 @@ init(Port) ->
 handler(Listen) ->
     case gen_tcp:accept(Listen) of
         {ok, Client} ->
-            io:format("handler {ok Client}");
+            io:format("handler {ok Client}"),
+            request(Client);
         {error, Error} ->
             io:format("handler {error Error"),
             error
