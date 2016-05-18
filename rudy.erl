@@ -1,5 +1,7 @@
 -module(rudy).
 -export([init/1, handler/1, request/1, reply/1]).
+-compile({no_auto_import,[get/1]}).
+-import(http, [parse_request/1, ok/1, get/1]).
 
 % Initializes server:
 %       - Takes port number
