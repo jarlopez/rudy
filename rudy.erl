@@ -1,5 +1,12 @@
 -module(rudy).
 -export([init/1, handler/1, request/1, reply/1]).
+-export([start/1, stop/0]).
+
+start(Port) ->
+    register(rudy, spawn(fun() -> init(Port) end)).
+
+stop() ->
+    exit(whereis(rudy), "Forcing rudy web server to exit").
 
 % Initializes server:
 %       - Takes port number
@@ -25,7 +32,8 @@ handler(Listen) ->
     case gen_tcp:accept(Listen) of
         {ok, Client} ->
             io:format("handler {ok Client}"),
-            request(Client);
+            request(Client),
+            handler(Listen);
         {error, Error} ->
             io:format("handler {error Error"),
             error
