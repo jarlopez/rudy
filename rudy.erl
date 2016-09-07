@@ -31,7 +31,7 @@ init(Port) ->
 handler(Listen) ->
     case gen_tcp:accept(Listen) of
         {ok, Client} ->
-            io:format("handler {ok Client}"),
+            % io:format("handler {ok Client}"),
             request(Client),
             handler(Listen);
         {error, Error} ->
@@ -46,8 +46,8 @@ request(Client) ->
     Recv = gen_tcp:recv(Client, 0),
     case Recv of
         {ok, Str} ->
-            io:format("request {ok Str}"),
-            io:format("\n\nRequest: ~s\n\n", [Str]),
+            % io:format("request {ok Str}"),
+            % io:format("\n\nRequest: ~s\n\n", [Str]),
             Request = http:parse_request(Str),
             Response = reply(Request),
             gen_tcp:send(Client, Response);
@@ -58,4 +58,5 @@ request(Client) ->
 
 % Decides what to reply and how to format into well-formed HTTP reply
 reply({{get, URI, _}, _, _}) ->
-    http:ok("Welcome to the next chapter.").
+    % timer:sleep(40),
+    http:ok("Welcome.").
