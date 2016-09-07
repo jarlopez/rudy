@@ -1,0 +1,55 @@
+% Very simple template for lab reports. Most common packages are already included.
+\documentclass[a4paper, 11pt]{article}
+\usepackage[utf8]{inputenc} % Change according your file encoding
+\usepackage{graphicx}
+\usepackage{url}
+
+%opening
+\title{Seminar Report: Rudy - A Small Web Server}
+\author{Johan Mickos}
+\date{\today{}}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+
+The purpose of this assignment is to implement a small web server in Erlang. The assignment will highlight
+\begin{itemize}
+    \item a basic understanding of RFC-2616 (the hypertext transfer protocol, or HTTP)
+    \item the TCP socket API of Erlang (found in module \texttt{gen\_tcp} )
+    \item the basic stucture of a server process
+    \item performance benchmarks for server response times and capacity
+\end{itemize}
+
+\section{Main Problems and Solutions}
+
+The basic server implementation was stitched together using the provided code in the assignment and patching the remaining sections to complete the functionality.
+
+\subsection{Infinite Request Handling}
+Infinite request handling was achieved by re-calling the handling method after it completes serving a request:
+\begin{verbatim}
+handler(Listen) ->
+    case gen_tcp:accept(Listen) of
+        {ok, Client} ->
+            request(Client),
+            handler(Listen); % Allow handling of more incoming requests
+    ...
+\end{verbatim}
+
+\subsection{Running Benchmarks}
+In order to evaluate the performance of this small web server, the benchmark program provided in the assignment was used. Verious cases were covered in order to get a realistic spread of data points:
+\begin{itemize}
+    \item base cases of running 100 requests from one process
+    \item extreme cases of running 10,000 requests from one process
+    \item running 100 parallel requests from four processes
+    \item running 10,000 parallel requests from four processes
+\end{itemize}
+
+\subsection{Increasing Throughput}
+There are multiple ways to increasse the performance and throughput of the web server implemented up to this point. As hinted at in the assignment, some of the ways include spawning a process per incoming request, telling the Erlang virtual machine to run using multiple cores, allowing multiple Erlang processes to handle the same socket, and running a pool of request handler to safely scale up the number of parallel connections supported.
+
+\section{Evaluation}
+
+\end{document}
