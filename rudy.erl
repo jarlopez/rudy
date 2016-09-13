@@ -27,7 +27,7 @@ init(Port) ->
 
 % Listens on socket for incoming connections
 %       - When client has connected, passes connection to request/1
-%       - When request is handles, close connection
+%       - When request is handled, close connection
 handler(Listen) ->
     case gen_tcp:accept(Listen) of
         {ok, Client} ->
@@ -59,4 +59,4 @@ request(Client) ->
 % Decides what to reply and how to format into well-formed HTTP reply
 reply({{get, URI, _}, _, _}) ->
     % timer:sleep(40),
-    http:ok("Welcome.").
+    http:ok("<html><head><title>Rudy</title></head><body>Accessing Resource:<br/>" ++ URI ++ "</body></html>").
