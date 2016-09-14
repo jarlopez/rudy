@@ -1,9 +1,12 @@
 -module(rudy).
--export([init/1, handler/1, request/1, reply/1]).
--export([start/1, stop/0]).
+% -export([init/1, handler/1, request/1, reply/1]).
+-export([start/1, start/2, stop/0]).
 
 start(Port) ->
-    register(rudy, spawn(fun() -> init(Port) end)).
+    start(Port, 1).
+
+start(Port, N) ->
+    register(rudy, spawn(fun() -> init(Port, N) end)).
 
 stop() ->
     exit(whereis(rudy), "Forcing rudy web server to exit").
@@ -12,30 +15,41 @@ stop() ->
 %       - Takes port number
 %       - Opens listening socket and passes it to handler/1
 %       - Closes socket when done
-init(Port) ->
+init(Port, N) ->
     Opt = [list, {active, false}, {reuseaddr, true}],
     case gen_tcp:listen(Port, Opt) of
         {ok, Listen} ->
-            io:format("init {ok Listen}"),
-            handler(Listen),
-            gen_tcp:close(Listen),
-            ok;
+            handlers(Listen, N),
+            wait();
         {error, Error} ->
-            io:format("init {error Error}"),
+            io:format("rudy: initialization failed: ~w~n", [Error]),
             error
     end.
+
+wait() ->
+    receive
+        stop ->
+            ok
+    end.
+
+handlers(_, 0) ->
+    ok;
+handlers(Listen, N) ->
+    spawn(fun() -> handler(Listen, N) end),
+    handlers(Listen, N-1).
 
 % Listens on socket for incoming connections
 %       - When client has connected, passes connection to request/1
 %       - When request is handled, close connection
-handler(Listen) ->
+handler(Listen, I) ->
     case gen_tcp:accept(Listen) of
         {ok, Client} ->
-            % io:format("handler {ok Client}"),
+            io:format("[~p] {ok Client}\n", [I]),
             request(Client),
-            handler(Listen);
+            % spawn(fun() -> handler(Listen, I) end);
+            handler(Listen, I);
         {error, Error} ->
-            io:format("handler {error Error"),
+            io:format("rudy: error ~w~n", [Error]),
             error
     end.
 
