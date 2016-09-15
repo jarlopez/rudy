@@ -44,7 +44,7 @@ handlers(Listen, N) ->
 handler(Listen, I) ->
     case gen_tcp:accept(Listen) of
         {ok, Client} ->
-            io:format("[~p] {ok Client}\n", [I]),
+            % io:format("[~p] {ok Client}\n", [I]),
             request(Client),
             % spawn(fun() -> handler(Listen, I) end);
             handler(Listen, I);
