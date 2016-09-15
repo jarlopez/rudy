@@ -1,5 +1,14 @@
 -module(http).
--export([parse_request/1, ok/1, get/1]).
+-export([
+        parse_request/1,
+        parse_uri/1,
+        ok/1,
+        get/1,
+        not_found/0,
+        internal_error/0,
+        gen_resource_headers/2,
+        gen_status/2
+    ]).
 
 % RFC 2616 -- Request definition
 %
@@ -56,3 +65,25 @@ ok(Body) ->
 get(URI) ->
     "GET " ++ URI ++ " HTTP/1.1\r\n" ++ "\r\n".
 
+gen_status(Status, Body) ->
+    "HTTP/1.1 " ++ Status ++ "\r\n" ++ "\r\n" ++ Body.
+
+not_found() ->
+    gen_status("404 Not Found", "").
+
+internal_error() ->
+    gen_status("500 Internal Error", "").
+
+gen_resource_headers(FileSize, MimeType) ->
+    "HTTP/1.1 200 OK\r\n" ++ "Content-Type: " ++ MimeType ++ "\r\n" ++ "Content-Length: " ++ integer_to_list(FileSize) ++ "\r\n" ++ "\r\n".
+
+parse_uri(URI) ->
+    Recv = http_uri:parse(URI),
+    case Recv of
+        {ok,  Result} ->
+            % io:format("Parsed URI into: ~p\n", [Result]),
+            {ok, Result};
+        {error, Reason} ->
+            io:format("Cannot parse URI (~p) due to ~p\n", [URI, Reason]),
+            {error, Reason}
+    end.

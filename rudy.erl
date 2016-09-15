@@ -2,6 +2,10 @@
 % -export([init/1, handler/1, request/1, reply/1]).
 -export([start/1, start/2, stop/0]).
 
+-define(home_page, "index.html").
+-define(error_page, "error.html").
+-define(not_found_template, "<html><head><title>Not Found</title></head><body>The requested resource cannot be found.</body></html>").
+
 start(Port) ->
     start(Port, 1).
 
@@ -9,7 +13,7 @@ start(Port, N) ->
     register(rudy, spawn(fun() -> init(Port, N) end)).
 
 stop() ->
-    exit(whereis(rudy), "Forcing rudy web server to exit").
+    whereis(rudy) ! stop.
 
 % Initializes server:
 %       - Takes port number
@@ -44,9 +48,9 @@ handlers(Listen, N) ->
 handler(Listen, I) ->
     case gen_tcp:accept(Listen) of
         {ok, Client} ->
-            % io:format("[~p] {ok Client}\n", [I]),
+            % io:format("[PID ~p] Accepted Client\n", [self()]),
+            % spawn(fun() -> request(Client) end),
             request(Client),
-            % spawn(fun() -> handler(Listen, I) end);
             handler(Listen, I);
         {error, Error} ->
             io:format("rudy: error ~w~n", [Error]),
@@ -63,14 +67,71 @@ request(Client) ->
             % io:format("request {ok Str}"),
             % io:format("\n\nRequest: ~s\n\n", [Str]),
             Request = http:parse_request(Str),
-            Response = reply(Request),
-            gen_tcp:send(Client, Response);
+            reply(Client, Request);
         {error, Error} ->
             io:format("rudy: errr ~w~n", [Error])
-    end,
-    gen_tcp:close(Client).
+    end.
+
+determine_resource(ParsedUri) ->
+    case ParsedUri of
+        {ok, {_, _, _, _, [$/], _}} ->
+            {resource, ?home_page};
+        {ok, {_, _, _, _, [$/ | Resource], Queries}} ->
+            % io:format("Resource: ~p\n", [Resource]),
+            % io:format("Queries: ~p\n", [Queries]),
+            {resource, Resource};
+        {error, Reason} ->
+            {error, ?error_page}
+    end.
+
+get_content_type(FileName) ->
+    Ext  = filename:extension(FileName),
+    case Ext of
+        ".jpg" ->
+            "image/jpg";
+        ".png" ->
+            "image/png";
+        ".html" ->
+            "text/html";
+        ".css" ->
+            % io:format("returning css\n"),
+            "text/css";
+        _ ->
+            % No extension, assume plaintext
+            % io:format("returning plain\n"),
+            "text/plain"
+    end.
 
 % Decides what to reply and how to format into well-formed HTTP reply
-reply({{get, URI, _}, _, _}) ->
+reply(Client, {{get, URI, _}, _, _}) ->
     % timer:sleep(40),
-    http:ok("<html><head><title>Rudy</title></head><body>Accessing Resource:<br/>" ++ URI ++ "</body></html>").
+    % io:format("Slept!\n"),
+    FullPath = "http://localhost" ++ URI,
+    Uri = http:parse_uri(FullPath),
+    ResourceStatus = determine_resource(Uri),
+    % case ResourceStatus of
+    %     {resource, Resource} ->
+
+    {_, Resource} = ResourceStatus,
+    case filelib:file_size(Resource) of
+        0 ->
+            Response = http:not_found(),
+            Data = ?not_found_template,
+            ok;
+        FileSize ->
+            % Resource exists
+            % io:format("FileSize; ~p\n", [FileSize]),
+            % Response = http:gen_resource_headers(FileSize, "image/png"),
+            MimeType = get_content_type(Resource),
+            % io:format("mimetype: ~p\n", [MimeType]),
+            Response = http:gen_resource_headers(FileSize, MimeType),
+            % file:sendfile(Resource, Client)
+            {ok, Data} = file:read_file(Resource)
+    end,
+
+    % io:format("Response: ~p\nResource: ~p\n", [Response, Resource]),
+    gen_tcp:send(Client, Response),
+    gen_tcp:send(Client, Data),
+    gen_tcp:send(Client, "\r\n"),
+    % file:sendfile(Resource,  Client),
+    gen_tcp:close(Client).
